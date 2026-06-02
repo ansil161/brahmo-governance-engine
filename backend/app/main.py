@@ -149,9 +149,20 @@ async def supersede_node(
             detail=f"Cascade invalidation engine failed: {str(e)}"
         )
 
+    # 4. Route pulse alerts for affected nodes
+    try:
+        from governance.pulse_router import route_pulse_alerts
+        affected_node_ids = [n["node_id"] for n in cascade_summary.get("affected_nodes", [])]
+        pulse_summary = route_pulse_alerts(affected_node_ids)
+    except Exception as e:
+        # Log error but do not fail the request since cascade invalidation succeeded
+        logger.error(f"Pulse alert notification routing failed: {str(e)}", exc_info=True)
+        pulse_summary = {"status": "error", "message": str(e), "alerts_created": 0}
+
     return {
         "message": "Node successfully superseded and cascade invalidation run.",
-        "cascade_summary": cascade_summary
+        "cascade_summary": cascade_summary,
+        "pulse_summary": pulse_summary
     }
 
 
