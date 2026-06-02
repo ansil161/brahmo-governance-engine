@@ -153,3 +153,22 @@ async def supersede_node(
         "message": "Node successfully superseded and cascade invalidation run.",
         "cascade_summary": cascade_summary
     }
+
+
+@app.get("/api/health-score/{org_id}", status_code=200)
+async def get_health_score(org_id: str):
+    """
+    Retrieve the 4-dimension Knowledge Health Score (Coverage, Freshness, Consistency, Balance, and Overall)
+    for the specified organization ID.
+    """
+    from fastapi import HTTPException, status
+    from governance.health_score import compute_health_score
+
+    try:
+        score_data = compute_health_score(org_id)
+        return score_data
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to calculate knowledge health score: {str(e)}"
+        )
